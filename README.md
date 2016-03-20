@@ -39,8 +39,6 @@ Once you are sure that VirtualBox and Vagrant are installed correctly execute th
 
 ###Enter the Swiss Tournament###
 
-	$ cd /
-	$ cd vagrant
 	$ cd src
 
 ###Initialize the database###
@@ -77,12 +75,14 @@ You should see these results:
 
 
 ###Shoutouts & References###
-* https://wiki.postgresql.org/wiki/Using_psycopg2_with_PostgreSQL
-* http://bobby-tables.com
+* https://docs.python.org/2/tutorial/
+* http://www.tutorialspoint.com/python/
 * http://www.tutorialspoint.com/postgresql
-* http://www.postgresqltutorial.com
 * http://initd.org/psycopg/docs/
+* http://www.postgresqltutorial.com
+* https://wiki.postgresql.org/wiki/Using_psycopg2_with_PostgreSQL
 * www.postgresql.org
 * https://stackoverflow.com/questions/14880192/iterate-a-list-of-tuples
+* https://www.vagrantup.com/docs/getting-started/
 
 
