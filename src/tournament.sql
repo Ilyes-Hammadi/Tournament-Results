@@ -1,13 +1,13 @@
 --  --- --- -- >> CODE HONOR << --
 -- the folowing code was inspired by this project https://github.com/danielburkard/udacity_fullstack_project2
 
+-- Drop the Database if exists
+DROP DATABASE IF EXISTS tournament;
 
--- Drop all the tables and views if they exists
-DROP VIEW IF EXISTS Standings;
-DROP VIEW IF EXISTS Count;
-DROP VIEW IF EXISTS Wins;
-DROP TABLE IF EXISTS Matches;
-DROP TABLE IF EXISTS Players;
+-- Create the tournaiment Database
+CREATE DATABASE tournament;
+
+\c tournament
 
 -- Players Table
 CREATE TABLE Players (
@@ -19,21 +19,18 @@ CREATE TABLE Players (
 CREATE TABLE Matches (
   id       SERIAL PRIMARY KEY,
   winner   INT REFERENCES Players (id),
-  loser INT REFERENCES Players (id),
-  result   INT
+  loser INT REFERENCES Players (id)
 );
 
 -- Wins View shows number of wins for each Player
 CREATE VIEW Wins AS
   SELECT
     Players.id,
-    COUNT(Matches.loser) AS n
+    COUNT(Matches.winner) AS n
   FROM Players
-    LEFT JOIN (SELECT *
-               FROM Matches
-               WHERE result > 0) AS Matches
+    LEFT JOIN Matches
       ON Players.id = Matches.winner
-  GROUP BY Players.id;
+  GROUP BY Players.id, Matches.winner;
 
 -- Count View shows number of matches for each Player
 CREATE VIEW Count AS
@@ -47,10 +44,13 @@ CREATE VIEW Count AS
 
 -- Standings View shows number of wins and matches for each Player
 CREATE VIEW Standings AS
-  SELECT
+ ( SELECT
     Players.id,
     Players.name,
-    Wins.n  AS wins,
-    Count.n AS matches
-  FROM Players, Count, Wins
-  WHERE Players.id = Wins.id AND Wins.id = Count.id;
+    count(Matches.winner) as wins,
+    (select count(Matches.id) from Matches where Players.id = Matches.winner OR Players.id = Matches.loser) AS matches
+    FROM Players
+    LEFT JOIN Matches
+    on Players.id = Matches.winner
+    GROUP BY Players.id
+    ORDER BY wins);

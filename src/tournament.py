@@ -3,38 +3,57 @@
 # tournament.py -- implementation of a Swiss-system tournament
 #
 
+from contextlib import contextmanager
+
 import psycopg2
+
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    try:
+        # return psycopg2.connect("dbname=tournament")
+        return psycopg2.connect(database='tournament', user='postgres', password='cosplay222', host='127.0.0.1',
+                                port='5432')
+    except:
+        print("Connection failed")
+
+
+@contextmanager
+def get_cursor():
+    """
+    Query helper function using context lib. Creates a cursor from a database
+    connection object, and performs queries using that cursor.
+    """
+    DB = connect()
+    cursor = DB.cursor()
+    try:
+        yield cursor
+    except:
+        raise
+    else:
+        DB.commit()
+    finally:
+        cursor.close()
+        DB.close()
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute("DELETE FROM matches")
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM matches")
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute("DELETE FROM players")
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM players")
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT COUNT(id) FROM players;")
-    rows = c.fetchall()
-    db.close()
-    return rows[0][0]
+    with get_cursor() as cursor:
+        cursor.execute("SELECT COUNT(id) FROM players;")
+        rows = cursor.fetchone()
+    return rows[0]
 
 
 def registerPlayer(name):
@@ -46,11 +65,8 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("INSERT INTO players (name) VALUES (%s)", (name,))
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO players (name) VALUES (%s)", (name,))
 
 
 def playerStandings():
@@ -64,31 +80,26 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT id,name,wins,matches FROM standings ORDER BY wins DESC;")
-    rows = c.fetchall()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("SELECT id,name,wins,matches FROM standings ORDER BY wins DESC;")
+        rows = cursor.fetchall()
     return rows
 
 
-def reportMatch(winner, loser, result=None):
+def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("INSERT INTO matches (winner,loser,result) VALUES (%s,%s,1)", (winner, loser))
-    c.execute("INSERT INTO matches (winner,loser,result) VALUES (%s,%s,0)", (loser, winner))
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO matches (winner,loser) VALUES (%s,%s)", (winner, loser))
 
-    """
-    >>> CODE HONOR <<<
-    The swissPairings method implementation was inspired by the project https://github.com/danielburkard/udacity_fullstack_project2
-    """
+
+"""
+>>> CODE HONOR <<<
+The swissPairings method implementation was inspired by the project https://github.com/danielburkard/udacity_fullstack_project2
+"""
 
 
 def swissPairings():
@@ -114,18 +125,12 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    db = connect()
-    c = db.cursor()
+    with get_cursor() as cursor:
+        cursor.execute("SELECT id,name,wins FROM standings ORDER BY wins DESC;")
+        rows = cursor.fetchall()
 
-    c.execute("SELECT id,name,wins FROM standings ORDER BY wins DESC;")
-    rows = c.fetchall()
-    db.close()
-
-    # intialise the counter with the 0 value
-    i = 0
-    # intialise the pairings list
     pairings = []
-    while i < len(rows):
+    for i in range(0, len(rows), 2):
         # get the player a
         player_a_id = rows[i][0]
         player_a_name = rows[i][1]
@@ -136,8 +141,5 @@ def swissPairings():
 
         # append the a and b players to the pairings list
         pairings.append((player_a_id, player_a_name, player_b_id, player_b_name))
-
-        # jump to the player that is after the acctual b player
-        i = i + 2
 
     return pairings
