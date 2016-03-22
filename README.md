@@ -1,4 +1,4 @@
-Tournament-fwd
+Tournament Results
 =============
 
 This program will simulate the first two rounds of a Swiss Tournament. In the first round
